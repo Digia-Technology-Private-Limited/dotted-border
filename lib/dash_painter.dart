@@ -2,13 +2,6 @@ part of 'dotted_border.dart';
 
 typedef PathBuilder = Path Function(Size);
 
-/// [DashedPainter] is a custom painter that draws a dashed line around the
-/// [child] widget. The [strokeWidth] property defines the width of the dashed
-/// border and [color] determines the stroke paint color. [CircularIntervalList]
-/// is populated with the [dashPattern] to render the appropriate pattern. The
-/// [borderRadius] property is taken into account only if the [borderType] is
-/// [BorderType.RRect]. A [customPath] can be passed in as a parameter if you
-/// want to draw a custom shaped border.
 class DashedPainter extends CustomPainter {
   final double strokeWidth;
   final List<double> dashPattern;
@@ -19,6 +12,7 @@ class DashedPainter extends CustomPainter {
   final StrokeCap strokeCap;
   final PathBuilder? customPath;
   final EdgeInsets padding;
+  final BorderPattern borderStyle;
 
   DashedPainter({
     this.strokeWidth = 2,
@@ -30,6 +24,8 @@ class DashedPainter extends CustomPainter {
     this.strokeCap = StrokeCap.butt,
     this.customPath,
     this.padding = EdgeInsets.zero,
+    this.borderStyle =
+        BorderPattern.dashed, // Add borderStyle with default value
   }) {
     assert(dashPattern.isNotEmpty, 'Dash Pattern cannot be empty');
   }
@@ -59,20 +55,60 @@ class DashedPainter extends CustomPainter {
       paint.color = color;
     }
 
-    Path _path;
+    Path path;
     if (customPath != null) {
-      _path = dashPath(
-        customPath!(size),
-        dashArray: CircularIntervalList(dashPattern),
-      );
+      path = customPath!(size);
     } else {
-      _path = _getPath(size);
+      path = _getPath(size);
     }
 
-    canvas.drawPath(_path, paint);
+    if (borderStyle == BorderPattern.dotted) {
+      path = _createDottedPath(path);
+    } else if (borderStyle == BorderPattern.dashed) {
+      path = _createDashedPath(path);
+    }
+
+    canvas.drawPath(path, paint);
   }
 
-  /// Returns a [Path] based on the the [borderType] parameter
+  Path _createDashedPath(Path path) {
+    return dashPath(path, dashArray: CircularIntervalList(dashPattern));
+  }
+
+  Path _createDottedPath(Path path) {
+    final Path dottedPath = Path();
+    final double dashWidth = strokeWidth; // Each dot's diameter
+    final double dashSpacing = strokeWidth * 2; // Space between dots
+
+    // Iterate over the entire path and add circular dots
+    final PathMetrics pathMetrics = path.computeMetrics();
+    for (final PathMetric pathMetric in pathMetrics) {
+      double distance = 0.0;
+
+      while (distance < pathMetric.length) {
+        final Tangent? tangent = pathMetric.getTangentForOffset(distance);
+
+        if (tangent != null) {
+          // Add a circular dot at the current tangent position
+          dottedPath.addOval(Rect.fromCircle(
+            center: tangent.position,
+            radius: dashWidth / 2,
+          ));
+        }
+
+        // Move the distance forward by the width of the dot + the spacing
+        distance += dashWidth + dashSpacing;
+      }
+    }
+
+    return dottedPath;
+  }
+
+  // Path _createDottedPath(Path path) {
+  //   final List<double> dotPattern = [strokeWidth, strokeWidth * 2];
+  //   return dashPath(path, dashArray: CircularIntervalList(dotPattern));
+  // }
+
   Path _getPath(Size size) {
     Path path;
     switch (borderType) {
@@ -89,11 +125,9 @@ class DashedPainter extends CustomPainter {
         path = _getOvalPath(size);
         break;
     }
-
-    return dashPath(path, dashArray: CircularIntervalList(dashPattern));
+    return path;
   }
 
-  /// Returns a circular path of [size]
   Path _getCirclePath(Size size) {
     double w = size.width;
     double h = size.height;
@@ -113,7 +147,6 @@ class DashedPainter extends CustomPainter {
       );
   }
 
-  /// Returns a Rounded Rectangular Path with [radius] of [size]
   Path _getRRectPath(Size size, BorderRadius borderRadius) {
     return Path()
       ..addRRect(
@@ -132,7 +165,6 @@ class DashedPainter extends CustomPainter {
       );
   }
 
-  /// Returns a path of [size]
   Path _getRectPath(Size size) {
     return Path()
       ..addRect(
@@ -145,7 +177,6 @@ class DashedPainter extends CustomPainter {
       );
   }
 
-  /// Return an oval path of [size]
   Path _getOvalPath(Size size) {
     return Path()
       ..addOval(
@@ -164,6 +195,7 @@ class DashedPainter extends CustomPainter {
         oldDelegate.color != this.color ||
         oldDelegate.dashPattern != this.dashPattern ||
         oldDelegate.padding != this.padding ||
-        oldDelegate.borderType != this.borderType;
+        oldDelegate.borderType != this.borderType ||
+        oldDelegate.borderStyle != this.borderStyle;
   }
 }

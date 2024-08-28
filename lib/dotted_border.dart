@@ -1,5 +1,7 @@
 library dotted_border;
 
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:path_drawing/path_drawing.dart';
 
@@ -24,6 +26,7 @@ class DottedBorder extends StatelessWidget {
   final StrokeCap strokeCap;
   final PathBuilder? customPath;
   final StackFit stackFit;
+  final BorderPattern borderPattern;
 
   DottedBorder({
     required this.child,
@@ -38,6 +41,7 @@ class DottedBorder extends StatelessWidget {
     this.strokeCap = StrokeCap.butt,
     this.customPath,
     this.stackFit = StackFit.loose,
+    this.borderPattern = BorderPattern.dashed,
   }) {
     assert(_isValidDashPattern(dashPattern), 'Invalid dash pattern');
   }
@@ -64,6 +68,7 @@ class DottedBorder extends StatelessWidget {
                 dashPattern: dashPattern,
                 customPath: customPath,
                 strokeCap: strokeCap,
+                borderStyle: borderPattern,
               ),
             ),
           ),
@@ -86,3 +91,9 @@ class DottedBorder extends StatelessWidget {
 
 /// The different supported BorderTypes
 enum BorderType { Circle, RRect, Rect, Oval }
+
+enum BorderPattern {
+  dashed,
+  dotted,
+  solid,
+}
