@@ -6,7 +6,7 @@ typedef PathBuilder = Path Function(Size);
 /// [child] widget. The [strokeWidth] property defines the width of the dashed
 /// border and [color] determines the stroke paint color. [CircularIntervalList]
 /// is populated with the [dashPattern] to render the appropriate pattern. The
-/// [radius] property is taken into account only if the [borderType] is
+/// [borderRadius] property is taken into account only if the [borderType] is
 /// [BorderType.RRect]. A [customPath] can be passed in as a parameter if you
 /// want to draw a custom shaped border.
 class DashedPainter extends CustomPainter {
@@ -15,7 +15,7 @@ class DashedPainter extends CustomPainter {
   final Color color;
   final Gradient? gradient;
   final BorderType borderType;
-  final Radius radius;
+  final BorderRadius borderRadius;
   final StrokeCap strokeCap;
   final PathBuilder? customPath;
   final EdgeInsets padding;
@@ -26,7 +26,7 @@ class DashedPainter extends CustomPainter {
     this.color = Colors.black,
     this.gradient,
     this.borderType = BorderType.Rect,
-    this.radius = const Radius.circular(0),
+    this.borderRadius = const BorderRadius.all(Radius.zero),
     this.strokeCap = StrokeCap.butt,
     this.customPath,
     this.padding = EdgeInsets.zero,
@@ -80,7 +80,7 @@ class DashedPainter extends CustomPainter {
         path = _getCirclePath(size);
         break;
       case BorderType.RRect:
-        path = _getRRectPath(size, radius);
+        path = _getRRectPath(size, borderRadius);
         break;
       case BorderType.Rect:
         path = _getRectPath(size);
@@ -114,17 +114,20 @@ class DashedPainter extends CustomPainter {
   }
 
   /// Returns a Rounded Rectangular Path with [radius] of [size]
-  Path _getRRectPath(Size size, Radius radius) {
+  Path _getRRectPath(Size size, BorderRadius borderRadius) {
     return Path()
       ..addRRect(
-        RRect.fromRectAndRadius(
+        RRect.fromRectAndCorners(
           Rect.fromLTWH(
             0,
             0,
             size.width,
             size.height,
           ),
-          radius,
+          topLeft: borderRadius.topLeft,
+          topRight: borderRadius.topRight,
+          bottomLeft: borderRadius.bottomLeft,
+          bottomRight: borderRadius.bottomRight,
         ),
       );
   }
